@@ -312,7 +312,7 @@ const Index = () => {
         <div className="text-center py-8 space-y-4">
           <div className="flex items-center justify-center gap-3">
             <ClockIcon className="h-8 w-8 text-timer-primary" />
-            <h1 className="text-4xl font-bold">TimeTracker Pro</h1>
+            <h1 className="text-4xl font-bold">TimeTracker Pro (NUEVO)</h1>
           </div>
           <p className="text-muted-foreground text-lg">
             Registro profesional de tiempo y productividad
