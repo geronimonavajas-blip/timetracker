@@ -23,46 +23,39 @@ interface TimeEntry {
   usuario?: string;
 }
 
-// Mock data inicial
-const [clientes, setClientes] = useState<string[]>([]);
-const [tareas, setTareas] = useState<string[]>([]);
 
 const Index = () => {
   const { toast } = useToast();
   const { user, profile, loading, signOut } = useAuth();
+
   // Check admin status from profile data
   const isAdmin = profile?.is_admin === true || profile?.role === 'admin';
-  
+
   console.log('Profile data:', profile);
   console.log('Is admin check:', isAdmin);
+
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [currentDuration, setCurrentDuration] = useState(0);
   const [currentStartTime, setCurrentStartTime] = useState<Date | null>(null);
-  const [clientes, setClientes] = useState(initialClientes);
-  const [tareas, setTareas] = useState(initialTareas);
+
+  // ✅ Estados correctos para listas (vacíos al inicio)
+  const [clientes, setClientes] = useState<string[]>([]);
+  const [tareas, setTareas] = useState<string[]>([]);
 
   // Timer state - persisted across tab changes
   const [timerTime, setTimerTime] = useState(0);
   const [timerIsRunning, setTimerIsRunning] = useState(false);
   const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
 
-  // Load time entries from Supabase
+  // Cargar datos (entradas, clientes y tareas) cuando hay user
   useEffect(() => {
     if (user) {
       loadTimeEntries();
+      loadClientes();
+      loadTareas();
     }
   }, [user]);
 
-  // Timer interval effect - runs in parent to persist across tab changes
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timerIsRunning) {
-      interval = setInterval(() => {
-        setTimerTime(prevTime => prevTime + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timerIsRunning]);
 
   const loadTimeEntries = async () => {
     if (!user) return;
