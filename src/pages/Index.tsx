@@ -24,8 +24,8 @@ interface TimeEntry {
 }
 
 // Mock data inicial
-const initialClientes = ["Empresa ABC", "Corporación XYZ", "Startup Tech", "Consultora 123", "Agencia Creativa"];
-const initialTareas = ["Desarrollo Frontend", "Desarrollo Backend", "Diseño UI/UX", "Testing", "Documentación", "Reunión con cliente", "Planificación", "Investigación"];
+const [clientes, setClientes] = useState<string[]>([]);
+const [tareas, setTareas] = useState<string[]>([]);
 
 const Index = () => {
   const { toast } = useToast();
@@ -100,6 +100,33 @@ const Index = () => {
       });
     }
   };
+
+  const loadClientes = async () => {
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('nombre')
+    .order('nombre');
+
+  if (error) {
+    console.error('Error loading clientes:', error);
+    return;
+  }
+  setClientes((data ?? []).map(c => c.nombre));
+};
+
+const loadTareas = async () => {
+  const { data, error } = await supabase
+    .from('tareas')
+    .select('nombre')
+    .order('nombre');
+
+  if (error) {
+    console.error('Error loading tareas:', error);
+    return;
+  }
+  setTareas((data ?? []).map(t => t.nombre));
+};
+
   const handleTimeComplete = (duration: number) => {
     setCurrentDuration(duration);
     setCurrentStartTime(new Date(Date.now() - duration * 1000));
