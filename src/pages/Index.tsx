@@ -266,40 +266,49 @@ const loadTareas = async () => {
       });
     }
   };
-  const handleAddCliente = (cliente: string) => {
-    setClientes(prev => [...prev, cliente]);
-    toast({
-      title: "Cliente agregado",
-      description: `${cliente} se agregó a la lista`
-    });
-  };
+  const handleAddCliente = async (nombre: string) => {
+  const { error } = await supabase.from('clientes').insert({ nombre });
+  if (error) {
+    toast({ title: "Error", description: "No se pudo agregar el cliente", variant: "destructive" });
+    return;
+  }
+  await loadClientes();
+  toast({ title: "Cliente agregado", description: `${nombre} se agregó a la lista` });
+};
 
-  const handleRemoveCliente = (cliente: string) => {
-    setClientes(prev => prev.filter(c => c !== cliente));
-    toast({
-      title: "Cliente eliminado",
-      description: `${cliente} se eliminó de la lista`,
-      variant: "destructive"
-    });
-  };
+const handleRemoveCliente = async (nombre: string) => {
+  const { error } = await supabase.from('clientes').delete().eq('nombre', nombre);
+  if (error) {
+    toast({ title: "Error", description: "No se pudo eliminar el cliente", variant: "destructive" });
+    return;
+  }
+  await loadClientes();
+  toast({ title: "Cliente eliminado", description: `${nombre} se eliminó de la lista`, variant: "destructive" });
+};
 
-  const handleAddTarea = (tarea: string) => {
-    setTareas(prev => [...prev, tarea]);
-    toast({
-      title: "Tarea agregada",
-      description: `${tarea} se agregó a la lista`
-    });
-  };
+const handleAddTarea = async (nombre: string) => {
+  const { error } = await supabase.from('tareas').insert({ nombre });
+  if (error) {
+    toast({ title: "Error", description: "No se pudo agregar la tarea", variant: "destructive" });
+    return;
+  }
+  await loadTareas();
+  toast({ title: "Tarea agregada", description: `${nombre} se agregó a la lista` });
+};
 
-  const handleRemoveTarea = (tarea: string) => {
-    setTareas(prev => prev.filter(t => t !== tarea));
-    toast({
-      title: "Tarea eliminada",
-      description: `${tarea} se eliminó de la lista`,
-      variant: "destructive"
-    });
-  };
+const handleRemoveTarea = async (nombre: string) => {
+  const { error } = await supabase.from('tareas').delete().eq('nombre', nombre);
+  if (error) {
+    toast({ title: "Error", description: "No se pudo eliminar la tarea", variant: "destructive" });
+    return;
+  }
+  await loadTareas();
+  toast({ title: "Tarea eliminada", description: `${nombre} se eliminó de la lista`, variant: "destructive" });
+};
 
+
+  
+  
   const handleSignOut = async () => {
     await signOut();
     toast({
