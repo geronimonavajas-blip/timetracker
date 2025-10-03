@@ -1,160 +1,143 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, RotateCcw } from "lucide-react";
-import { ManualTimeInput } from "./ManualTimeInput";
+import { PlayIcon, PauseIcon, RotateCcwIcon, FlagIcon } from "lucide-react";
 
-interface TimerProps {
-  onTimeComplete?: (elapsed: number) => void;
-  onAutoSave?: (elapsed: number, startTime: Date) => void;
+type TimerProps = {
+  // estado controlado por el padre (Index.tsx)
   time: number;
-  setTime: (time: number | ((prevTime: number) => number)) => void;
+  setTime: (n: number) => void;
   isRunning: boolean;
-  setIsRunning: (running: boolean) => void;
+  setIsRunning: (b: boolean) => void;
   startTime: Date | null;
-  setStartTime: (time: Date | null) => void;
-}
+  setStartTime: (d: Date | null) => void;
 
-export const Timer = ({ 
-  onTimeComplete, 
+  // callbacks del padre
+  onTimeComplete: (duration: number) => void;   // cuando tocan Finalizar
+  onAutoSave?: (duration: number, startTime: Date) => void; // si lo usás
+};
+
+export function Timer({
+  time,
+  setTime,
+  isRunning,
+  setIsRunning,
+  startTime,
+  setStartTime,
+  onTimeComplete,
   onAutoSave,
-  time, 
-  setTime, 
-  isRunning, 
-  setIsRunning, 
-  startTime, 
-  setStartTime 
-}: TimerProps) => {
+}: TimerProps) {
+  // inputs para agregar tiempo manual
+  const [h, setH] = useState(0);
+  const [m, setM] = useState(0);
+  const [s, setS] = useState(0);
 
-  // Timer interval is now handled in the parent component
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const format = (t: number) => {
+    const hh = Math.floor(t / 3600);
+    const mm = Math.floor((t % 3600) / 60);
+    const ss = Math.floor(t % 60);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
   };
 
   const handleStart = () => {
+    if (isRunning) return;
+    // si ya tengo tiempo acumulado, retrocedo el start para que siga desde ahí
+    const base = startTime ?? new Date(Date.now() - time * 1000);
+    setStartTime(base);
     setIsRunning(true);
-    if (!startTime) {
-      setStartTime(new Date());
-    }
   };
 
   const handlePause = () => {
     setIsRunning(false);
   };
 
-  const handleStop = () => {
+  const handleFinalize = () => {
+    // NO se resetea; solo se pausa y se entrega el tiempo al padre
     setIsRunning(false);
-    if (time > 0 && startTime) {
-      if (onAutoSave) {
-        onAutoSave(time, startTime);
-      } else if (onTimeComplete) {
-        onTimeComplete(time);
-      }
-    }
-    setTime(0);
-    setStartTime(null);
+    onTimeComplete(time);
+    // Si querés un autosave apenas finaliza y ya hay cliente/tarea cargados,
+    // podrías disparar onAutoSave?.(time, startTime ?? new Date());
   };
 
-  const handleReset = () => {
+  const handleRestart = () => {
     setIsRunning(false);
     setTime(0);
     setStartTime(null);
   };
 
-  const handleManualTimeSet = (seconds: number) => {
-    setTime(prevTime => prevTime + seconds);
-    if (!startTime) {
-      setStartTime(new Date(Date.now() - seconds * 1000));
+  const handleAddManual = () => {
+    const add = Math.max(0, h) * 3600 + Math.max(0, m) * 60 + Math.max(0, s);
+    if (add <= 0) return;
+    const nextTime = time + add;
+    setTime(nextTime);
+
+    // si está corriendo, recalibrar inicio para que el conteo siga coherente
+    if (isRunning) {
+      setStartTime(new Date(Date.now() - nextTime * 1000));
     }
-  };
 
-  const getTimerStatus = () => {
-    if (!isRunning && time === 0) return "idle";
-    if (isRunning) return "running";
-    return "paused";
+    // limpiar inputs
+    setH(0); setM(0); setS(0);
   };
-
-  const status = getTimerStatus();
 
   return (
-    <div className="space-y-4">
-      <Card className="p-8 bg-gradient-card shadow-timer border-border/50">
-        <div className="text-center space-y-6">
-          <div className="space-y-2">
-            <Badge variant={status === "running" ? "default" : status === "paused" ? "secondary" : "outline"} className="text-sm">
-              {status === "running" ? "En progreso" : status === "paused" ? "Pausado" : "Inactivo"}
-            </Badge>
-            {startTime && (
-              <p className="text-sm text-muted-foreground">
-                Iniciado: {startTime.toLocaleTimeString()}
-              </p>
-            )}
-          </div>
-          
-          <div className="relative">
-            <div className={`text-6xl font-mono font-bold transition-all duration-300 ${
-              status === "running" 
-                ? "text-transparent bg-gradient-primary bg-clip-text animate-pulse" 
-                : "text-foreground"
-            }`}>
-              {formatTime(time)}
-            </div>
-            {status === "running" && (
-              <div className="absolute inset-0 rounded-lg bg-timer-primary/10 blur-xl animate-pulse" />
-            )}
-          </div>
-
-          <div className="flex justify-center gap-3">
-            {!isRunning ? (
-              <Button 
-                onClick={handleStart} 
-                size="lg" 
-                className="bg-timer-primary hover:bg-timer-primary/90 text-white shadow-lg"
-              >
-                <Play className="h-5 w-5 mr-2" />
-                {time > 0 ? "Continuar" : "Iniciar"}
-              </Button>
-            ) : (
-              <Button 
-                onClick={handlePause} 
-                size="lg" 
-                variant="secondary"
-                className="shadow-lg"
-              >
-                <Pause className="h-5 w-5 mr-2" />
-                Pausar
-              </Button>
-            )}
-            
-            <Button 
-              onClick={handleStop} 
-              size="lg" 
-              className="bg-timer-success hover:bg-timer-success/90 text-white shadow-lg"
-              disabled={time === 0}
-            >
-              <Square className="h-5 w-5 mr-2" />
-              Finalizar
-            </Button>
-            
-            <Button 
-              onClick={handleReset} 
-              size="lg" 
-              variant="outline"
-              disabled={time === 0}
-            >
-              <RotateCcw className="h-5 w-5 mr-2" />
-              Reiniciar
-            </Button>
-          </div>
+    <div className="p-4 rounded-xl border bg-card text-card-foreground">
+      <div className="text-center mb-4">
+        <div className="text-sm opacity-60 mb-2">
+          {isRunning ? "Activo" : "Inactivo"}
         </div>
-      </Card>
-      
-      <ManualTimeInput onTimeSet={handleManualTimeSet} />
+        <div className="text-5xl font-mono tabular-nums tracking-wider">
+          {format(time)}
+        </div>
+      </div>
+
+      <div className="flex gap-2 justify-center mb-6">
+        <Button onClick={handleStart}>
+          <PlayIcon className="mr-2 h-4 w-4" /> Iniciar
+        </Button>
+        <Button variant="secondary" onClick={handlePause}>
+          <PauseIcon className="mr-2 h-4 w-4" /> Pausa
+        </Button>
+        <Button variant="destructive" onClick={handleFinalize}>
+          <FlagIcon className="mr-2 h-4 w-4" /> Finalizar
+        </Button>
+        <Button variant="outline" onClick={handleRestart}>
+          <RotateCcwIcon className="mr-2 h-4 w-4" /> Reiniciar
+        </Button>
+      </div>
+
+      <div className="rounded-lg border p-4">
+        <div className="text-sm font-medium mb-3">Agregar Tiempo Manual</div>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <input
+            type="number"
+            className="w-full rounded-md border bg-background p-2"
+            value={h}
+            onChange={(e) => setH(parseInt(e.target.value || "0", 10))}
+            min={0}
+            placeholder="Horas"
+          />
+          <input
+            type="number"
+            className="w-full rounded-md border bg-background p-2"
+            value={m}
+            onChange={(e) => setM(parseInt(e.target.value || "0", 10))}
+            min={0}
+            placeholder="Min"
+          />
+          <input
+            type="number"
+            className="w-full rounded-md border bg-background p-2"
+            value={s}
+            onChange={(e) => setS(parseInt(e.target.value || "0", 10))}
+            min={0}
+            placeholder="Seg"
+          />
+        </div>
+        <Button className="w-full" onClick={handleAddManual}>
+          + Agregar Tiempo
+        </Button>
+      </div>
     </div>
   );
-};
+}
