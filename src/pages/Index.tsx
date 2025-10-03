@@ -47,6 +47,17 @@ const Index = () => {
   const [timerIsRunning, setTimerIsRunning] = useState(false);
   const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
 
+  // ⏱ Intervalo para el cronómetro
+useEffect(() => {
+  let interval: NodeJS.Timeout;
+  if (timerIsRunning) {
+    interval = setInterval(() => {
+      setTimerTime((prev) => prev + 1);
+    }, 1000);
+  }
+  return () => clearInterval(interval);
+}, [timerIsRunning]);
+  
   // Cargar datos (entradas, clientes y tareas) cuando hay user
   useEffect(() => {
     if (user) {
