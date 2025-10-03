@@ -124,9 +124,9 @@ const loadTareas = async () => {
     setCurrentDuration(duration);
     setCurrentStartTime(new Date(Date.now() - duration * 1000));
     // Reset timer state after completing
-    setTimerTime(0);
-    setTimerIsRunning(false);
-    setTimerStartTime(null);
+    //setTimerTime(0);
+    //setTimerIsRunning(false);
+    //setTimerStartTime(null);
   };
 
   const handleAutoSave = async (duration: number, startTime: Date) => {
@@ -198,6 +198,14 @@ const loadTareas = async () => {
       setEntries(prev => [newEntry, ...prev]);
       setCurrentDuration(0);
       setCurrentStartTime(null);
+      
+      setTimerTime(0);
+      setTimerStartTime(null);
+      setTimerIsRunning(false);
+      setCurrentDuration(0);
+      setCurrentStartTime(null);
+
+
       
       toast({
         title: "Registro guardado",
@@ -337,6 +345,11 @@ const handleRemoveTarea = async (nombre: string) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 max-w-6xl">
+        {/* DEBUG TEMPORAL */}
+<pre className="text-xs opacity-60">
+  {JSON.stringify({ time: timerTime, isRunning: timerIsRunning }, null, 2)}
+</pre>
+
         {/* Header */}
         <div className="text-center py-8 space-y-4">
           <div className="flex items-center justify-center gap-3">
